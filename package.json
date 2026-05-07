@@ -1,4 +1,14 @@
 {
   "name": "SongLyrics",
-  "packageManager": "yarn@4.14.1"
+  "version": "0.0.0",
+  "main": "index.js",
+  "bin": "output.js",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "enquirer": "^2.4.1"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
 }
