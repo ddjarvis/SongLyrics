@@ -2,13 +2,15 @@
   "name": "SongLyrics",
   "version": "0.0.0",
   "main": "index.js",
-  "bin": "output.js",
+  "bin": "songlyrics",
   "license": "MIT",
-  "dependencies": {
-    "commander": "^14.0.3",
-    "enquirer": "^2.4.1"
+  "scripts": {
+  	"start": "node index.js",
+  	"build": "pkg ."
   },
-  "devDependencies": {
-    "pkg": "^5.8.1"
+  "pkg": {
+    "scripts": ["lib/**/*.js"],
+    "assets": ["views/**/*", "config.json"],
+    "targets": ["node18-linux-x64", "node18-macos-x64", "node18-win-x64"]
   }
 }
