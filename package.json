@@ -5,12 +5,28 @@
   "bin": "songlyrics",
   "license": "MIT",
   "scripts": {
-  	"start": "node index.js",
-  	"build": "pkg ."
+    "start": "node index.js"
   },
   "pkg": {
-    "scripts": ["lib/**/*.js"],
-    "assets": ["views/**/*", "config.json"],
-    "targets": ["node18-linux-x64", "node18-macos-x64", "node18-win-x64"]
+    "scripts": [
+      "lib/**/*.js"
+    ],
+    "assets": [
+      "views/**/*",
+      "config.json"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-win-x64"
+    ]
+  },
+  "devDependencies": {
+    "jest": "^30.4.1",
+    "jspkg": "npm:pkg"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "enquirer": "^2.4.1"
   }
 }

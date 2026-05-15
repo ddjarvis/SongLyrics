@@ -1,0 +1,14 @@
+{
+  "main": "./index.js",
+  "mainFormat": "commonjs", // Default: "commonjs", options: "commonjs", "module"
+  "output": "./js_executable",
+  "disableExperimentalSEAWarning": true, // Default: false
+  "useSnapshot": false,  // Default: false
+  "useCodeCache": true, // Default: false
+  "execArgv": ["--no-warnings", "--max-old-space-size=4096"], // Optional
+  "execArgvExtension": "env" // Default: "env", options: "none", "env", "cli"
+  //"assets": {  // Optional
+  //  "a.dat": "/path/to/a.dat",
+  //  "b.txt": "/path/to/b.txt"
+  }
+}
