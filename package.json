@@ -1,6 +1,7 @@
 {
   "name": "SongLyrics",
   "version": "0.0.0",
+  "type": "module",
   "main": "index.js",
   "bin": "songlyrics",
   "license": "MIT",
@@ -26,7 +27,11 @@
     "jspkg": "npm:pkg"
   },
   "dependencies": {
+    "chalk": "4.1.2",
     "commander": "^14.0.3",
-    "enquirer": "^2.4.1"
+    "console-table-printer": "^2.15.0",
+    "enquirer": "^2.4.1",
+    "node-id3": "^0.2.9",
+    "p-limit": "^7.3.0"
   }
 }

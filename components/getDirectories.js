@@ -1,7 +1,7 @@
 
 
-const path = require("node:path");
-const fs = require("node:fs");
+import path from "node:path";
+import fs from "node:fs";
 
 function swapBookmark (bookmark) {
 	const bm = {
@@ -27,7 +27,7 @@ function checkArgs(args) {
 function checkArg(arg) {
 	const regBm = /(?<=(^|\/))\s*#\{[^}]+\}\s*(?=($|\/))/g;
 	const regBrace = /\{\{[^}]*,[^}]*\}\}/g;
-	let hasBrace = false, hasBookmark = false;
+	let hasBrace = false, hasBm = false;
 	let allBm = [], allBraces = [];
 	
 	const sep = path.sep;
@@ -107,9 +107,8 @@ function isDir(path) {
 	}
 }
 
-module.exports = function(args = []) {
+export default function(args = []) {
 	if(args.length == 0) { throw new Error("no args"); }
-	
 	let dirs = getDiretories(args);
 	if(dirs.length > 0) {
 		return dirs;
