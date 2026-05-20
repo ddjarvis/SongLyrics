@@ -6,7 +6,7 @@ const NodeID3 = nodeid3lib.Promise;
 
 import { getInput, parseInput } from './components/getInput.js';
 import getDirectories from './components/getDirectories.js';
-import getMp3s from './components/getMp3s.js';
+import getMp3List from './components/getMp3s.js';
 import showHelp from './components/showHelp.js';
 import processMp3s from './components/processMp3s.js';
 
@@ -54,7 +54,7 @@ config.excludes = inputs.opts.exclude;
 config.recursive = inputs.opts.recursive;
 
 const dirs = getDirectories(inputs.dirs);
-const mp3list = getMp3s(dirs, config);
+const mp3list = getMp3List(dirs, config);
 
 // console.log(inputs);
 // console.log(dirs);
