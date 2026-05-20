@@ -6,7 +6,9 @@
   "bin": "songlyrics",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "g": "node index.js",
+    "start": "node index.js",
+    "cons": "bash consolidate.sh"
   },
   "pkg": {
     "scripts": [
