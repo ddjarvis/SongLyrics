@@ -15,3 +15,7 @@ node_modules
 
 #!.yarn/cache
 .pnp.*
+
+
+consolidate.sh
+consolidated.*

@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Table, printTable } from 'console-table-printer';
-const { table, log } = console;
+const { log } = console;
 
 
 function canStringify(input) {
@@ -81,6 +81,7 @@ const theme = {
 
 function showHelp(opts = {}) {
 	const { name, desc, usage, commands, options, ...opt } = {...prog, ...opts};
+	let table;
 	
 	log(`${name}\n${desc}`);
 	
@@ -91,15 +92,53 @@ function showHelp(opts = {}) {
 	}
 	
 	if (commands.length > 0) {
+		const t = new Table({
+			style: {
+				vertical: ' ',
+			},
+			columns: [
+				{ name: 'cmd', alignment: 'left', title: 'Command' },
+				{ name: 'desc', alignment: 'left', title: 'Description', maxLen: 55 },
+			],
+		});
+		const rows = commands.map(c => {
+			let cmd = c.flags;
+			let desc = c.desc;
+			let obj = { cmd, desc };
+			return obj;
+		});
+		t.addRows(rows);
+		let table = t.render().split('\n').slice(3,-1).join('\n');
+		
 		log('');
 		log(theme.header('Commands:'));
-		commands.forEach(c => log(`${c.cmd}\t${c.desc}`));
+		log(table);
+		// commands.forEach(c => log(`${c.cmd}\t${c.desc}`));
 	}
 	
 	if (options.length > 0) {
+		const t = new Table({
+			style: {
+				vertical: ' ',
+			},
+			columns: [
+				{ name: 'flags', alignment: 'left', title: 'Flags' },
+				{ name: 'desc', alignment: 'left', title: 'Description', maxLen: 55 },
+			],
+		});
+		const rows = options.map(o => {
+			let flags = o.flags;
+			let desc = o.desc;
+			let obj = { flags, desc };
+			return obj;
+		});
+		t.addRows(rows);
+		let table = t.render().split('\n').slice(3,-1).join('\n');
+		
 		log('');
 		log(theme.header('Options:'));
-		options.forEach(o => log(`${o.flags}\t${o.desc}`));
+		log(table);
+		// options.forEach(o => log(`${o.flags}\t${o.desc}`));
 	}
 	
 	log('');
@@ -117,7 +156,7 @@ function processHelpOptions(args = {}) {
 		out.desc = theme.description1(desc);
 	}
 	if (usage.length > 0) {
-		out.usage = usage.map(u => theme.description2('  • '+u));
+		out.usage = usage.map(u => theme.description2('  ◦ ' +u));
 	}
 	if (commands.length > 0) {
 		out.commands = commands
@@ -145,7 +184,8 @@ function processHelpOptions(args = {}) {
 				let flags = [
 					!!o.opt ? theme.flag('-'+o.opt) : '',
 					!!o.long ? theme.flag('--'+o.long) : '',
-				].filter(f => !!f).join(', ');
+				].filter(f => !!f).join(', ')
+				+(!!o.value ? theme.flag(` <${o.value}>`) : '');
 				let hint = !!o.hint ? o.hint.replace(regex,'') : '';
 				let desc = [
 					theme.description2(o.desc),
@@ -160,5 +200,6 @@ function processHelpOptions(args = {}) {
 }
 
 export default function(opts = {}) {
-	showHelp(processHelpOptions(opts));
+	const processedOpts = processHelpOptions(opts);
+	showHelp(processedOpts);
 }

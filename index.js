@@ -27,12 +27,14 @@ function displayHelp() {
 			{
 				opt: 'e',
 				long: 'exclude',
+				value: 'string',
 				desc: 'Exclude files or folders matching a specific pattern or path.',
 				hint: 'Repeatable'
 			},
 			{
 				opt: 'r',
 				long: 'recursive',
+				value: 'bool',
 				desc: 'Walk through subfolders recursively during the scan.',
 				hint: 'Default: false'
 			}
