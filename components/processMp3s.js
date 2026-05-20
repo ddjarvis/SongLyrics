@@ -5,6 +5,9 @@ import nodeid3lib from 'node-id3';
 import * as mm from 'music-metadata';
 import pLimit from 'p-limit';
 import ora from 'ora';
+import cliProgress from 'cli-progress';
+
+import getLyrics from './getLyrics.js';
 
 async function start() {
   const arrData = [/* your data here */];
@@ -181,7 +184,6 @@ async function processMp3(mp3) {
 		console.error("Error reading ID3 tags:", error);
 	}
 }
-
 async function processMp3s(mp3s) {
 	let i = 0;
 	for (let mp3 of mp3s) {
@@ -194,7 +196,6 @@ async function processMp3s(mp3s) {
 	}
 	console.log(inspect(db));
 }
-
 async function readMp3(mp3) {
 	try {
 		const buffer = await fs.readFile(mp3);
@@ -209,7 +210,7 @@ async function readMp3(mp3) {
 }
 
 async function readMp3s(mp3s) {
-	const spinner = ora({text: "Running readMp3s...", spinner: "dots"});
+	const spinner = ora({text: "Reading MP3 List.", spinner: "dots"});
 	const limit = pLimit(5);
 	
 	const promises = mp3s.map(mp3 => {
@@ -233,10 +234,21 @@ async function readMp3s(mp3s) {
 	db.lrc.none = grp["0"];
 	db.lrc.unsynced = grp["-1"];
 	db.lrc.synced = grp["1"];
-	let grpCounts = Object.entries(db.lrc).map(g => `${g[0]}: ${g[1].length}`);
+	let grpCounts = Object.entries(db.lrc).map(g => `${g[0]}: ${g[1]?.length || 0}`);
 	let counts = [`dbFull: ${dbFull.length}`, ...grpCounts].join(', ');
 	// console.log(inspect());
 	spinner.succeed(`Done! (${counts})`);
+}
+
+async function processGroup(group) {
+	let count = group.length;
+	// console.log(count);
+	if(count == 0) return;
+	for(let mp3 of group) {
+		await getLyrics(mp3);
+	};
+	
+	return;
 }
 
 export default async function(mp3s) {
@@ -246,4 +258,5 @@ export default async function(mp3s) {
 	// console.time('readMp3s_2');
 	await readMp3s(mp3s);
 	// console.timeEnd('readMp3s_2');
+	await processGroup(db.lrc.none);
 }

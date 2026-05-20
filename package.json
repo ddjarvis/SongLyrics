@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "chalk": "4.1.2",
+    "cli-progress": "^3.12.0",
     "commander": "^14.0.3",
     "console-table-printer": "^2.15.0",
     "enquirer": "^2.4.1",
@@ -37,6 +38,7 @@
     "music-metadata": "^11.12.3",
     "node-id3": "^0.2.9",
     "ora": "^9.4.0",
-    "p-limit": "^7.3.0"
+    "p-limit": "^7.3.0",
+    "p-throttle": "^8.1.0"
   }
 }
