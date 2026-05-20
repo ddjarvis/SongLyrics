@@ -34,6 +34,7 @@
     "console-table-printer": "^2.15.0",
     "enquirer": "^2.4.1",
     "file-type": "^22.0.1",
+    "music-metadata": "^11.12.3",
     "node-id3": "^0.2.9",
     "p-limit": "^7.3.0"
   }
