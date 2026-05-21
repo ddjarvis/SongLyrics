@@ -6,8 +6,27 @@ import nodeid3lib from 'node-id3';
 import * as mm from 'music-metadata';
 import pLimit from 'p-limit';
 import ora from 'ora';
-import cliProgress from 'cli-progress';
 import chalk from 'chalk';
+import cliProgress from 'cli-progress';
+
+
+function createSafeLogger(progressBar) {
+	// This inner function "remembers" the progressBar via closure
+	return function logMessage(message) {
+		if (typeof progressBar.log === 'function') {
+			// Modern cli-progress (v3.8.0+)
+			progressBar.log(message);
+		} else {
+			// Fallback for older versions
+			if (process.stdout.clearLine) {
+				process.stdout.clearLine(0);
+				process.stdout.cursorTo(0);
+			}
+			console.log(message);
+			progressBar.render(); // Force the bar to redraw
+		}
+	};
+}
 
 import getLyrics from './getLyrics.js';
 
@@ -217,18 +236,42 @@ async function readMp3s(mp3s) {
 }
 
 async function processGroup(group) {
-	let count = group.length;
-	// console.log(count);
-	if(count == 0) return;
-	for(let mp3 of group) {
-		await processMp3(mp3);
-	};
+	if (!group || group.length === 0) return;
+
+	const progressBar = new cliProgress.SingleBar({
+		format: `${chalk.cyan('Fetching Lyrics')} |{bar}| {percentage}% | {value}/{total} Tracks`,
+		barCompleteChar: '\u2588',
+		barIncompleteChar: '\u2591',
+		hideCursor: true,
+		clearOnComplete: false,
+		stopOnComplete: true
+	});
 	
-	return;
+	progressBar.start(group.length, 0);
+	const safeLog = createSafeLogger(progressBar);
+
+	const limit = pLimit(5);
+
+	const promises = group.map(mp3 => {
+		return limit(async () => {
+			try {
+				// PASS progressBar HERE
+				await processMp3(mp3, safeLog);
+			} catch (error) {
+				// Also use progressBar.log for errors!
+				safeLog(`\n${chalk.red('Error processing:')} ${mp3.artist} - ${mp3.title}\n`);
+			} finally {
+				progressBar.increment();
+			}
+		});
+	});
+
+	await Promise.all(promises);
 }
-async function processMp3(mp3) {
+
+async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`
-	let lrc = await getLyrics(mp3);
+	let lrc = await getLyrics(mp3, safeLog);
 	
 	if(lrc == null) return;
 	
@@ -237,7 +280,7 @@ async function processMp3(mp3) {
 		type: `${chalk.bold('Type:')} ${lrc.type}`,
 		variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
 	}
-	console.log(`${log.track}\n${log.type}\t${log.variance}\n`);
+	safeLog(`${log.track}\n${log.type}\t${log.variance}\n`);
 }
 
 function printGroup(name, group) {

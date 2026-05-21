@@ -74,24 +74,65 @@ function parseFiles() {
 	for file in "${files[@]}"; do {
 		(( i++ ))
 		parseFile "$file" "$(getShortPath "${dir_project}" "${file}")"
-		if (( i < count )); then printf "\n\n"; fi
+		if (( i < count )); then printf "\n"; fi
 	} done
+}
+
+function join_by() { local d=""; [[ "$1" == "-d" ]] && { d="$2"; shift 2; }; local f=${1-}; shift; printf %s "$f" "${@/#/$d}"; }
+
+function parseArgs() {
+	# Options/Arguments Parser (getopt)...
+	local show=0
+	local filesArr=()
+	local files=""
+	
+	{
+		local OPT="$(getopt -o "sa:" -l "show,add:" -- "$@" )"
+		eval set -- "${OPT}" && unset OPT
+		while true; do {
+			case "$1" in
+				-s | --show ) show=1; shift ;;
+				-a | --add )
+					path="$(realpath "$2")"
+					[[ -e "${path}" ]] && filesArr+=("${path}")
+					shift 2 ;;
+				-- ) shift ; break ;;
+				* ) shift ;;
+			esac
+		} done
+	}
+	(( ${#filesArr[@]} > 0 )) && files="$(join_by -d ":" "${filesArr[@]}")"
+	
+	declare -Ag options
+	options[show]="${show}"
+	options[files]="${files}"
 }
 
 function main() {
 	local dir dir_project dir_name
 	local text_name text_path
 	local files file
+	local addfiles
+	parseArgs "$@"
 	text_name="consolidated.js"
 	
-	if dir_project="$(checkDir "${1:-$PWD}")"; then {
+	if dir_project="$(checkDir "${PWD}")"; then {
 		text_path="${dir_project}/${text_name}"
 		mapfile -t files < <(getFiles "${dir_project}")
 	} else {
 		return 1
 	} fi
 	
-	parseFiles "${files[@]}" | tee "${text_path}" | tee /dev/tty | termux-clipboard-set
+	if [[ "${options[files]}" != "" ]]; then {
+		IFS=':' read -r -a addfiles <<< "${options[files]}"
+		files+=("${addfiles[@]}")
+	} fi
+	
+	if (( ${options[show]} > 0 )); then {
+		parseFiles "${files[@]}" | tee "${text_path}" | tee /dev/tty | termux-clipboard-set
+	} else {
+		parseFiles "${files[@]}" | tee "${text_path}" | termux-clipboard-set
+	} fi
 }
 
 main "$@"

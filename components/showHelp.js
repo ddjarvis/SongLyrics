@@ -1,6 +1,7 @@
 import chalk from 'chalk';
-import { Table, printTable } from 'console-table-printer';
-const { log } = console;
+import { Table, printTable } from 'console-table-printer'
+
+import { helpOptions } from './globals.js';
 
 
 function canStringify(input) {
@@ -83,12 +84,12 @@ function showHelp(opts = {}) {
 	const { name, desc, usage, commands, options, ...opt } = {...prog, ...opts};
 	let table;
 	
-	log(`${name}\n${desc}`);
+	console.log(`${name}\n${desc}`);
 	
 	if (usage.length > 0) {
-		log('');
-		log(theme.header('Usage:'));
-		usage.forEach(u => log(u));
+		console.log('');
+		console.log(theme.header('Usage:'));
+		usage.forEach(u => console.log(u));
 	}
 	
 	if (commands.length > 0) {
@@ -110,10 +111,10 @@ function showHelp(opts = {}) {
 		t.addRows(rows);
 		let table = t.render().split('\n').slice(3,-1).join('\n');
 		
-		log('');
-		log(theme.header('Commands:'));
-		log(table);
-		// commands.forEach(c => log(`${c.cmd}\t${c.desc}`));
+		console.log('');
+		console.log(theme.header('Commands:'));
+		console.log(table);
+		// commands.forEach(c => console.log(`${c.cmd}\t${c.desc}`));
 	}
 	
 	if (options.length > 0) {
@@ -135,13 +136,13 @@ function showHelp(opts = {}) {
 		t.addRows(rows);
 		let table = t.render().split('\n').slice(3,-1).join('\n');
 		
-		log('');
-		log(theme.header('Options:'));
-		log(table);
-		// options.forEach(o => log(`${o.flags}\t${o.desc}`));
+		console.log('');
+		console.log(theme.header('Options:'));
+		console.log(table);
+		// options.forEach(o => console.log(`${o.flags}\t${o.desc}`));
 	}
 	
-	log('');
+	console.log('');
 }
 
 function processHelpOptions(args = {}) {
@@ -199,7 +200,8 @@ function processHelpOptions(args = {}) {
 	return out;
 }
 
-export default function(opts = {}) {
+export default function(args = {}) {
+	const opts = { ...helpOptions, ...args};
 	const processedOpts = processHelpOptions(opts);
 	showHelp(processedOpts);
 }

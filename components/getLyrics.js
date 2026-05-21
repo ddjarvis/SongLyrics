@@ -4,23 +4,28 @@ import pThrottle from 'p-throttle';
 import chalk from 'chalk';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const throttle = pThrottle({
+	limit: 1,
+	interval: 300
+});
+const throttledFetchLyrics = throttle(fetchLyrics);
 
-export default async function (mp3) {
+export default async function (mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`
 	let url = getUrl(mp3);
 	
-	await sleep(300);
-	let rawJson = await fetchLyrics(url);
+	// await sleep(300);
+	let rawJson = await throttledFetchLyrics(url);
 	if (rawJson == null) {
 		let preMsg = 'Empty JSON response for:';
-		console.error(`${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}\n`);
+		safeLog(`${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}\n`);
 		return null;
 	}
 	
 	const parsedJson = parseJson(rawJson, mp3.durationSec);
 	if (parsedJson.length == 0) {
 		let preMsg = 'Empty Parsed JSON for:';
-		console.error(`${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}\n`);
+		safeLog(`${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}\n`);
 		return null;
 	}
 	

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 
+
 import nodeid3lib from 'node-id3';
 const NodeID3 = nodeid3lib.Promise;
 
+import {options, directories} from './components/globals.js';
 import { getInput, parseInput } from './components/getInput.js';
 import getDirectories from './components/getDirectories.js';
 import getMp3List from './components/getMp3s.js';
@@ -13,36 +15,7 @@ import processMp3s from './components/processMp3s.js';
 const config = {};
 
 function displayHelp() {
-	const opts = {
-		name: "SongLyrics",
-		desc: "Scans folders for MP3s, checks if there are mp3s, and adds lyrics if available.",
-		usage: [
-			"songlyrics [options] <directories...>",
-			"lyrics [options] <directories...>"
-		],
-		options: [
-			{
-				opt: 'h',
-				long: 'help',
-				desc: 'Display this help menu.',
-			},
-			{
-				opt: 'e',
-				long: 'exclude',
-				value: 'string',
-				desc: 'Exclude files or folders matching a specific pattern or path.',
-				hint: 'Repeatable'
-			},
-			{
-				opt: 'r',
-				long: 'recursive',
-				value: 'bool',
-				desc: 'Walk through subfolders recursively during the scan.',
-				hint: 'Default: false'
-			}
-		]
-	};
-	showHelp(opts);
+	showHelp();
 }
 
 const inputs = parseInput();	// inputs.opts.recursive [bool], inputs.dirs [arr]
@@ -55,6 +28,9 @@ config.recursive = inputs.opts.recursive;
 
 const dirs = getDirectories(inputs.dirs);
 const mp3list = getMp3List(dirs, config);
+
+console.log(options);
+console.log(directories);
 
 // console.log(inputs);
 // console.log(dirs);

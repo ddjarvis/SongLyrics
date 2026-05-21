@@ -2,6 +2,8 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 
+import {options, directories} from './globals.js';
+
 // 1. Define the config file name
 const CONFIG_FILE_NAME = 'bookmarks.json';
 
@@ -149,6 +151,7 @@ export default function(args = []) {
 	if(args.length === 0) { throw new Error("no args"); }
 	let dirs = getDirectories(args);
 	if(dirs.length > 0) {
+		directories.list = dirs;
 		return dirs;
 	} else {
 		throw new Error("no dirs");

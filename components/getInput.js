@@ -1,6 +1,10 @@
 import { program, Command, Option } from 'commander';
 import { parseArgs } from 'node:util';
 
+import {options, directories} from './globals.js';
+
+
+
 export function getInput() {
 	const argv = process.argv;
 	let args = [];
@@ -14,13 +18,20 @@ export function parseInput() {
 	const { values, positionals } = parseArgs({
 		args: [...process.argv].slice(2),
 	  options: {
-	  	help: { type: 'boolean', short: 'h', default: false },
+	  	debug: { type: 'boolean', short: 'd', default: false },
 	    exclude: { type: 'string', short: 'e', multiple: true, default: [] },
-	    recursive: { type: 'boolean', short: 'r', default: false }
+	  	help: { type: 'boolean', short: 'h', default: false },
+	    recursive: { type: 'boolean', short: 'r', default: false },
+	    variance: { type: 'string', short: 'v', default: '3' },
+	    "synced-only": { type: 'boolean', short: 's', default: false }
   	},
 	  allowPositionals: true
 	});
-	// console.log({values});
+	Object.keys(values).forEach(key => {
+		options[key] = values[key];
+	});
+	directories.input = positionals;
+	console.log(options);
 	// console.log({positionals});
 	return {
 		opts: values,
