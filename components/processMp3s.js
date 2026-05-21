@@ -1,11 +1,13 @@
 
 import fs from 'node:fs/promises';
 import { inspect } from 'node:util';
+
 import nodeid3lib from 'node-id3';
 import * as mm from 'music-metadata';
 import pLimit from 'p-limit';
 import ora from 'ora';
 import cliProgress from 'cli-progress';
+import chalk from 'chalk';
 
 import getLyrics from './getLyrics.js';
 
@@ -171,31 +173,6 @@ function checkTags(data) {
 let dbFull = [];
 let db = [];
 
-async function processMp3(mp3) {
-	try {
-		const buffer = await fs.readFile(mp3);
-		const duration = await getDuration(buffer);
-		const tags = await getTags(buffer);
-		const data = getData(tags, duration);
-		db.push(data);
-		const meta = checkTags(data);
-		return meta;
-	} catch (error) {
-		console.error("Error reading ID3 tags:", error);
-	}
-}
-async function processMp3s(mp3s) {
-	let i = 0;
-	for (let mp3 of mp3s) {
-		i++;
-		let meta = await processMp3(mp3);
-		console.log(`--- Audio Metadata (${i}/${mp3s.length}) ---`);
-		console.log(meta);
-		console.log('--- ----- -- ----- ---');
-		console.log('');
-	}
-	console.log(inspect(db));
-}
 async function readMp3(mp3) {
 	try {
 		const buffer = await fs.readFile(mp3);
@@ -208,7 +185,6 @@ async function readMp3(mp3) {
 		console.error("Error reading ID3 tags:", error);
 	}
 }
-
 async function readMp3s(mp3s) {
 	const spinner = ora({text: "Reading MP3 List.", spinner: "dots"});
 	const limit = pLimit(5);
@@ -245,10 +221,35 @@ async function processGroup(group) {
 	// console.log(count);
 	if(count == 0) return;
 	for(let mp3 of group) {
-		await getLyrics(mp3);
+		await processMp3(mp3);
 	};
 	
 	return;
+}
+async function processMp3(mp3) {
+	let track = `${mp3.artist} - ${mp3.title}`
+	let lrc = await getLyrics(mp3);
+	
+	if(lrc == null) return;
+	
+	const log = {
+		track: `${chalk.bold('Track:')} ${track}`,
+		type: `${chalk.bold('Type:')} ${lrc.type}`,
+		variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
+	}
+	console.log(`${log.track}\n${log.type}\t${log.variance}\n`);
+}
+
+function printGroup(name, group) {
+	if(group == null) return;
+	const title = `${name}: (${group.length})`;
+	console.log(`\n${chalk.cyan.bold(title)}`);
+	for(let mp3 of group) {
+		let artist = mp3.artist;
+		let title = mp3.title;
+		let track = `${artist} - ${title}`;
+		console.log(` • ${track}`);
+	}
 }
 
 export default async function(mp3s) {
@@ -257,6 +258,15 @@ export default async function(mp3s) {
 	// console.timeEnd('readMp3s_1');
 	// console.time('readMp3s_2');
 	await readMp3s(mp3s);
-	// console.timeEnd('readMp3s_2');
+
 	await processGroup(db.lrc.none);
+	// console.log(inspect(db.lrc, {
+	// 	depth: 1,
+	// 	maxArrayLength: 5,
+	// }));
+	// console.log(Array.isArray(db.lrc));
+	
+	// printGroup(`Synced Lyrics`,db.lrc.synced);
+	// printGroup(`Plain Lyrics`,db.lrc.unsynced);
+	// printGroup(`No Lyrics`,db.lrc.none);
 }

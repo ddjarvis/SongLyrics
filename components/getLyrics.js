@@ -1,14 +1,47 @@
 
+import { inspect } from 'node:util';
 import pThrottle from 'p-throttle';
+import chalk from 'chalk';
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function (mp3) {
+	let track = `${mp3.artist} - ${mp3.title}`
 	let url = getUrl(mp3);
-	console.log(`${mp3.artist} - ${mp3.title}\n${url}`);
+	
+	await sleep(300);
 	let rawJson = await fetchLyrics(url);
-	if(rawJson != null) console.log('Success!');
-	let filtered = filterLyrics(rawJson, mp3.durationSec)
-	await sleep(500);
+	if (rawJson == null) {
+		let preMsg = 'Empty JSON response for:';
+		console.error(`${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}\n`);
+		return null;
+	}
+	
+	const parsedJson = parseJson(rawJson, mp3.durationSec);
+	if (parsedJson.length == 0) {
+		let preMsg = 'Empty Parsed JSON for:';
+		console.error(`${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}\n`);
+		return null;
+	}
+	
+	const selectedJson = parsedJson[0];
+	const hasSynced = selectedJson.syncedLyrics != null;
+	const plainLrc = selectedJson.plainLyrics;
+	
+	let value = null;
+	let type = null;
+	let variance = Math.round(Math.abs(mp3.durationSec - selectedJson.duration) * 1000) / 1000;
+	if (hasSynced) {
+		type = 'synced';
+		value = selectedJson.syncedLyrics;
+	} else {
+		type = 'plain';
+		value = selectedJson.plainLyrics;
+	}
+	const obj = {type, value, variance};
+	
+	return obj;
+	// console.log(`Track: ${track}\nRaw: ${rawJson.length}\nParsed: ${parsedJson.length}\n`);
 }
 
 function getUrl(mp3) {
@@ -34,11 +67,33 @@ async function fetchLyrics(url) {
 		console.error("Fetch failed:", error);
 	}
 }
-function filterLyrics(json, dur) {
-	let filtered = null;
-	const variance_threshold = 3;
-	filtered = json
-		.filter(j => j.syncedLyrics != null)
-		.filter(j => Math.abs(j.duration - dur) <= variance_threshold);
-	console.log(`Raw: ${json.length}\nFiltered: ${filtered.length}`);
+function parseJson(json, dur) {
+	const VARIANCE_THRESHOLD = 3;
+	const WEIGHT_VARIANCE = 100;
+	const WEIGHT_SYNCED = 60;
+	
+	const filteredJson = json
+		.filter(j => Math.abs(j.duration - dur) <= VARIANCE_THRESHOLD);
+	const scoredJson = filteredJson.map(j => {
+		const variance = Math.abs(j.duration - dur);
+		const normalized = Math.max(0, 1 - (variance / VARIANCE_THRESHOLD));
+		const varianceScore = normalized * WEIGHT_VARIANCE;
+		
+		const hasSynced = j.syncedLyrics != null;
+		const syncedScore = hasSynced ? WEIGHT_SYNCED : 0;
+		
+		let score = (varianceScore + syncedScore) > WEIGHT_SYNCED
+			? (varianceScore + syncedScore) : 0;
+		
+		const obj = {score, json: j};
+		
+		return obj;
+	});
+	const sortedJson = scoredJson.sort((a,b) => b.score - a.score);
+	const finalJson = sortedJson
+		.filter(j => j.score > WEIGHT_SYNCED)
+		.map(j => j.json);
+	// console.log(inspect(finalJson));
+	return finalJson;
 }
+
