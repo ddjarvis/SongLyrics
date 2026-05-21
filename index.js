@@ -29,8 +29,8 @@ config.recursive = inputs.opts.recursive;
 const dirs = getDirectories(inputs.dirs);
 const mp3list = getMp3List(dirs, config);
 
-console.log(options);
-console.log(directories);
+// console.log(options);
+// console.log(directories);
 
 // console.log(inputs);
 // console.log(dirs);

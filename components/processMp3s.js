@@ -30,22 +30,6 @@ function createSafeLogger(progressBar) {
 
 import getLyrics from './getLyrics.js';
 
-async function start() {
-  const arrData = [/* your data here */];
-  
-  // Set the concurrency limit to 5
-  const limit = pLimit(5);
-
-  // Map the array to an array of limited promises
-  const promises = arrData.map(data => {
-    return limit(() => readData(data));
-  });
-
-  // Wait for all of them to resolve
-  await Promise.all(promises);
-  
-  console.log("All data processed!");
-}
 
 const NodeID3 = nodeid3lib.Promise;
 
@@ -270,17 +254,41 @@ async function processGroup(group) {
 }
 
 async function processMp3(mp3, safeLog) {
-	let track = `${mp3.artist} - ${mp3.title}`
-	let lrc = await getLyrics(mp3, safeLog);
-	
-	if(lrc == null) return;
-	
-	const log = {
-		track: `${chalk.bold('Track:')} ${track}`,
-		type: `${chalk.bold('Type:')} ${lrc.type}`,
-		variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
+	let track = `${mp3.artist} - ${mp3.title}`;
+	try {
+		let lrc = await getLyrics(mp3);
+	} catch (err) {
+		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track}`);
+		safeLog(`  Reason: ${err.message}\n`);
+		return
 	}
-	safeLog(`${log.track}\n${log.type}\t${log.variance}\n`);
+	
+	// 1. Define the tags to update
+	// node-id3 requires an object with 'language' and 'text' for unsynchronisedLyrics
+	const tagsToUpdate = {
+		unsynchronisedLyrics: {
+			language: "eng", // 3-character ISO 639-2 language code (e.g., 'eng', 'und')
+			text: lrc.value  // The plain or LRC formatted lyrics
+		}
+	};
+
+	try {
+		// 2. Write the tags to the file
+		// mp3.path contains the file path string based on your db.all mapping
+		await NodeID3.update(tagsToUpdate, mp3.path);
+
+		const log = {
+			track: `${chalk.bold('Track:')} ${track}`,
+			type: `${chalk.bold('Type:')} ${lrc.type}`,
+			variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
+			status: chalk.green.bold('✓ Saved:')
+		};
+		safeLog(`${status}: ${log.track} (${log.type}, ${log.variance})`);
+		
+	} catch (err) {
+		safeLog(`${chalk.redBright.bold('✗ Failed to save:')} ${track}`);
+		safeLog(`  Reason: ${err.message}\n`);
+	}
 }
 
 function printGroup(name, group) {
@@ -301,15 +309,16 @@ export default async function(mp3s) {
 	// console.timeEnd('readMp3s_1');
 	// console.time('readMp3s_2');
 	await readMp3s(mp3s);
-
 	await processGroup(db.lrc.none);
+	
+	await readMp3s(mp3s);
 	// console.log(inspect(db.lrc, {
 	// 	depth: 1,
 	// 	maxArrayLength: 5,
 	// }));
 	// console.log(Array.isArray(db.lrc));
 	
-	// printGroup(`Synced Lyrics`,db.lrc.synced);
-	// printGroup(`Plain Lyrics`,db.lrc.unsynced);
-	// printGroup(`No Lyrics`,db.lrc.none);
+	printGroup(`Synced Lyrics`,db.lrc.synced);
+	printGroup(`Plain Lyrics`,db.lrc.unsynced);
+	printGroup(`No Lyrics`,db.lrc.none);
 }

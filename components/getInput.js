@@ -31,7 +31,7 @@ export function parseInput() {
 		options[key] = values[key];
 	});
 	directories.input = positionals;
-	console.log(options);
+	// console.log(options);
 	// console.log({positionals});
 	return {
 		opts: values,

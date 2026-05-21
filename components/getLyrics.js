@@ -18,14 +18,16 @@ export default async function (mp3, safeLog) {
 	let rawJson = await throttledFetchLyrics(url);
 	if (rawJson == null) {
 		let preMsg = 'Empty JSON response for:';
-		safeLog(`${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}\n`);
+		let err = `${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}`;
+		throw new Error(err);
 		return null;
 	}
 	
 	const parsedJson = parseJson(rawJson, mp3.durationSec);
 	if (parsedJson.length == 0) {
 		let preMsg = 'Empty Parsed JSON for:';
-		safeLog(`${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}\n`);
+		let err = `${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}`;
+		throw new Error(err);
 		return null;
 	}
 	
@@ -37,10 +39,10 @@ export default async function (mp3, safeLog) {
 	let type = null;
 	let variance = Math.round(Math.abs(mp3.durationSec - selectedJson.duration) * 1000) / 1000;
 	if (hasSynced) {
-		type = 'synced';
+		type = 'Synced';
 		value = selectedJson.syncedLyrics;
 	} else {
-		type = 'plain';
+		type = 'Plain';
 		value = selectedJson.plainLyrics;
 	}
 	const obj = {type, value, variance};
