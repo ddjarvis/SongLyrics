@@ -125,7 +125,7 @@ function parseBm(arg, bm) {
 	}
 }
 
-function getDiretories(args) {
+function getDirectories(args) {
 	let dirs = checkArgs(args);
 	dirs = dirs.filter(arg => {
 		if (isDir(arg)) {
@@ -147,7 +147,7 @@ function isDir(dirPath) {
 
 export default function(args = []) {
 	if(args.length === 0) { throw new Error("no args"); }
-	let dirs = getDiretories(args);
+	let dirs = getDirectories(args);
 	if(dirs.length > 0) {
 		return dirs;
 	} else {
