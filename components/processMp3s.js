@@ -255,8 +255,9 @@ async function processGroup(group) {
 
 async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`;
+	let lrc = null;
 	try {
-		let lrc = await getLyrics(mp3);
+		lrc = await getLyrics(mp3);
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track}`);
 		safeLog(`  Reason: ${err.message}\n`);
@@ -283,7 +284,7 @@ async function processMp3(mp3, safeLog) {
 			variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
 			status: chalk.green.bold('✓ Saved:')
 		};
-		safeLog(`${status}: ${log.track} (${log.type}, ${log.variance})`);
+		safeLog(`${log.status}: ${log.track} (${log.type}, ${log.variance})`);
 		
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ Failed to save:')} ${track}`);

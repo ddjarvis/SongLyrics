@@ -96,13 +96,14 @@ songlyrics "/music/{{Rock, Pop}}"
 6. **Scoring Algorithm:** When multiple lyric results are returned, it scores them based on:
    - **Duration Variance:** Penalizes tracks with a duration difference > 3 seconds.
    - **Synced Bonus:** Heavily weights results that include LRC timestamps.
+
 ## 📋 TODO
 
-- [ ] **Implement ID3 Writing:** Currently, the tool fetches and logs the lyrics. Implement `NodeID3.update()` to actually write the fetched plain/synced lyrics back to the MP3 file's `USLT` frame.
-- [ ] **Optimize API Fetching:** Refactor `processGroup` in `processMp3s.js` to use `p-limit` for concurrent API requests instead of the current sequential `for...of` loop.
-- [ ] **Implement Progress Bar:** Fully integrate the imported `cli-progress` package to show a progress bar during the fetching/writing phase.
+- [x] **Implement ID3 Writing:** Implemented `NodeID3.update()` to write fetched plain/synced lyrics back to the MP3 file's `USLT` frame.
+- [x] **Optimize API Fetching:** Refactored `processGroup` in `processMp3s.js` to use `p-limit` for concurrent API requests.
+- [x] **Implement Progress Bar:** Fully integrated `cli-progress` to show a progress bar during the fetching/writing phase.
 - [ ] **Dry Run Mode:** Add a `--dry-run` flag to fetch and display lyrics without modifying the actual MP3 files.
-- [ ] **Error Handling for Writing:** Add robust error handling and file-backup mechanisms before overwriting existing ID3 tags.
+- [ ] **Error Handling for Writing:** Add robust file-backup mechanisms before overwriting existing ID3 tags.
 - [ ] **Configuration CLI:** Add a command to easily add/remove bookmarks directly from the CLI (e.g., `songlyrics config add SL /path/to/music`).
 
 ## 📄 License
