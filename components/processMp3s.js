@@ -5,11 +5,19 @@ import { inspect } from 'node:util';
 import nodeid3lib from 'node-id3';
 import * as mm from 'music-metadata';
 import pLimit from 'p-limit';
+import pThrottle from 'p-throttle';
 import ora from 'ora';
 import chalk from 'chalk';
 import cliProgress from 'cli-progress';
 
 import {options, directories} from './globals.js';
+import mistral from './mistral.js';
+
+const throttleMistral = pThrottle({
+	limit: 1,
+	interval: 1300
+});
+const throttledMistral = throttleMistral(mistral);
 
 function createSafeLogger(progressBar) {
 	// This inner function "remembers" the progressBar via closure
@@ -263,19 +271,18 @@ async function processGroup(group) {
 	console.log('');
 }
 
-async function printGroups(mp3s) {
-	await readMp3s(mp3s);
-	if(db.lrc.synced <= 80) printGroup(`Synced Lyrics`,db.lrc.synced);
-	printGroup(`Plain Lyrics`,db.lrc.unsynced);
-	printGroup(`No Lyrics`,db.lrc.none);
-}
 async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`;
 	let lrc = null;
 	try {
-		lrc = await getLyrics(mp3);
-		if(isMostlyCJK(lrc.value)) {
-			throw new Error('Lyrics is mostly Chinese/Japanese/Korean');
+		let tmpLrc = await getLyrics(mp3);
+		if (tmpLrc.value == null) throw new Error("Empty LRC");
+		if(isMostlyCJK(tmpLrc.value)) {
+			let transLrc = await throttledMistral(tmpLrc.value);
+			if(transLrc != null) throw new Error("Failed to translate LRC");
+			lrc = {...tmpLrc, value: transLrc};
+		} else {
+			lrc = tmpLrc;
 		}
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track} (${chalk.italic(err.message)})`);
@@ -338,6 +345,12 @@ function isMostlyCJK(text) {
 	return ratio > 0.1; 
 }
 
+async function printGroups(mp3s) {
+	await readMp3s(mp3s);
+	if(db.lrc.synced <= 80) printGroup(`Synced Lyrics`,db.lrc.synced);
+	printGroup(`Plain Lyrics`,db.lrc.unsynced);
+	printGroup(`No Lyrics`,db.lrc.none);
+}
 function printGroup(name, group) {
 	if(group == null) return;
 	const title = `${name}: (${group.length})`;
@@ -356,7 +369,14 @@ export default async function(mp3s) {
 	// console.timeEnd('readMp3s_1');
 	// console.time('readMp3s_2');
 	await readMp3s(mp3s);
-	await processGroup(db.lrc.none);
+	
+	let group = null;
+	if (options['recheck']) {
+		group = [...db.lrc.none, ...db.lrc.unsynced];
+	} else {
+		group = [...db.lrc.none];
+	}
+	await processGroup(group);
 	// console.log(inspect(db.lrc, {
 	// 	depth: 1,
 	// 	maxArrayLength: 5,

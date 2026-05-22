@@ -40,6 +40,12 @@ export const helpOptions = {
 			hint: 'Default: false'
 		},
 		{
+			opt: 'c',
+			long: 'recheck',
+			desc: 'Recheck mp3s with plain lyrics.',
+			hint: 'Default: false'
+		},
+		{
 			opt: 'd',
 			long: 'dry-run',
 			desc: 'Fetch and display lyrics without modifying MP3 files.',

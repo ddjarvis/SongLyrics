@@ -1,9 +1,10 @@
 #!/usr/bin/env node
+
+import 'dotenv/config'; 
+
 import fs from 'node:fs/promises';
 
 import chalk from 'chalk';
-import nodeid3lib from 'node-id3';
-const NodeID3 = nodeid3lib.Promise;
 
 import {options, directories} from './components/globals.js';
 import { getInput, parseInput } from './components/getInput.js';
@@ -11,6 +12,7 @@ import getDirectories from './components/getDirectories.js';
 import getMp3List from './components/getMp3s.js';
 import showHelp from './components/showHelp.js';
 import processMp3s from './components/processMp3s.js';
+
 
 const config = {};
 

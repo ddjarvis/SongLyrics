@@ -17,16 +17,17 @@ export function getInput() {
 export function parseInput() {
 	const { values, positionals } = parseArgs({
 		args: [...process.argv].slice(2),
-	  options: {
-	  	debug: { type: 'boolean', default: false },
-	    exclude: { type: 'string', short: 'e', multiple: true, default: ["*/.stversions/*"] },
-	  	help: { type: 'boolean', short: 'h', default: false },
-	    recursive: { type: 'boolean', short: 'r', default: false },
-	    variance: { type: 'string', short: 'v', default: '3' },
-	    "synced-only": { type: 'boolean', short: 's', default: false },
-	    "dry-run": { type: 'boolean', short: 'd', default: false }
-  	},
-	  allowPositionals: true
+		options: {
+			debug: { type: 'boolean', default: false },
+			exclude: { type: 'string', short: 'e', multiple: true, default: ["*/.stversions/*"] },
+			help: { type: 'boolean', short: 'h', default: false },
+			recursive: { type: 'boolean', short: 'r', default: false },
+			recheck: { type: 'boolean', short: 'c', default: false },
+			variance: { type: 'string', short: 'v', default: '3' },
+			"synced-only": { type: 'boolean', short: 's', default: false },
+			"dry-run": { type: 'boolean', short: 'd', default: false }
+		},
+		allowPositionals: true
 	});
 	Object.keys(values).forEach(key => {
 		options[key] = values[key];
