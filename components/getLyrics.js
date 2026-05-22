@@ -1,7 +1,6 @@
 
 import { inspect } from 'node:util';
 import pThrottle from 'p-throttle';
-import chalk from 'chalk';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const throttle = pThrottle({
@@ -15,13 +14,17 @@ export default async function (mp3, safeLog) {
 	let url = getUrl(mp3);
 	
 	// await sleep(300);
-	let rawJson = await throttledFetchLyrics(url);
+	try {
+		let rawJson = await throttledFetchLyrics(url);
+	} catch(error) {
+		throw new Error(error);
+	}
 	if (rawJson == null) {
 		let err = 'Empty JSON Response';
 		throw new Error(err);
 	}
 	
-	const parsedJson = parseJson(rawJson, mp3.durationSec);
+	const parsedJson = parseJson(rawJson, mp3.durationSec, safeLog);
 	if (parsedJson.length == 0) {
 		let err = 'Empty Parsed JSON';
 		throw new Error(err);
@@ -70,13 +73,22 @@ async function fetchLyrics(url) {
 		console.error("Fetch failed:", error);
 	}
 }
-function parseJson(json, dur) {
+function parseJson(json, dur, safeLog) {
 	const VARIANCE_THRESHOLD = 3;
 	const WEIGHT_VARIANCE = 100;
 	const WEIGHT_SYNCED = 60;
+	const MINIMUM_LINES = 8;
 	
 	const filteredJson = json
-		.filter(j => Math.abs(j.duration - dur) <= VARIANCE_THRESHOLD);
+		.filter(j => Math.abs(j.duration - dur) <= VARIANCE_THRESHOLD)
+		.filter(j => {
+			const hasSynced = !!j.syncedLyrics
+				? j.syncedLyrics.split('\n').length > MINIMUM_LINES : false;
+			const hasPlain = !!j.plainLyrics
+				? j.plainLyrics.split('\n').length > MINIMUM_LINES : false;
+			// safeLog({hasSynced, hasPlain});
+			return hasSynced || hasPlain;
+		})
 	const scoredJson = filteredJson.map(j => {
 		const variance = Math.abs(j.duration - dur);
 		const normalized = Math.max(0, 1 - (variance / VARIANCE_THRESHOLD));
@@ -97,6 +109,7 @@ function parseJson(json, dur) {
 		.filter(j => j.score > WEIGHT_SYNCED)
 		.map(j => j.json);
 	// console.log(inspect(finalJson));
+	// console.log(finalJson);
 	return finalJson;
 }
 

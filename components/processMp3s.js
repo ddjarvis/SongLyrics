@@ -99,13 +99,13 @@ function checkLyrics(tags) {
 	};
 }
 
-async function getDuration(fileBuffer) {
-	const mmdata = await mm.parseBuffer(fileBuffer);
+async function getDuration(path) {
+	const mmdata = await mm.parseFile(path);
 	const duration = mmdata.format.duration || 0;
 	return duration;
 }
-async function getTags(fileBuffer) {
-	const tags = await NodeID3.read(fileBuffer);
+async function getTags(path) {
+	const tags = await NodeID3.read(path);
 	return tags;
 }
 function getData(mp3, tags, duration) {
@@ -187,9 +187,8 @@ let db = [];
 
 async function readMp3(mp3) {
 	try {
-		const buffer = await fs.readFile(mp3);
-		const duration = await getDuration(buffer);
-		const tags = await getTags(buffer);
+		const duration = await getDuration(mp3);
+		const tags = await getTags(mp3);
 		const data = getData(mp3, tags, duration);
 		// dbFull.push(data);
 		return data;
@@ -275,11 +274,11 @@ async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`;
 	let lrc = null;
 	try {
-		let tmpLrc = await getLyrics(mp3);
+		let tmpLrc = await getLyrics(mp3, safeLog);
 		if (tmpLrc.value == null) throw new Error("Empty LRC");
 		if(isMostlyCJK(tmpLrc.value)) {
 			let transLrc = await throttledMistral(tmpLrc.value);
-			if(transLrc != null) throw new Error("Failed to translate LRC");
+			if(transLrc == null) throw new Error("Failed to translate LRC");
 			lrc = {...tmpLrc, value: transLrc};
 		} else {
 			lrc = tmpLrc;

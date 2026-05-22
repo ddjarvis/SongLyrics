@@ -1,9 +1,6 @@
-import { program, Command, Option } from 'commander';
 import { parseArgs } from 'node:util';
 
 import {options, directories} from './globals.js';
-
-
 
 export function getInput() {
 	const argv = process.argv;
