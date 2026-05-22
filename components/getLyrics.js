@@ -2,6 +2,8 @@
 import { inspect } from 'node:util';
 import pThrottle from 'p-throttle';
 
+import {options, directories} from './globals.js';
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const throttle = pThrottle({
 	limit: 1,
@@ -14,9 +16,11 @@ export default async function (mp3, safeLog) {
 	let url = getUrl(mp3);
 	
 	// await sleep(300);
+	let rawJson = null;
 	try {
-		let rawJson = await throttledFetchLyrics(url);
+		rawJson = await throttledFetchLyrics(url);
 	} catch(error) {
+		safeLog(error);
 		throw new Error(error);
 	}
 	if (rawJson == null) {
@@ -87,7 +91,7 @@ function parseJson(json, dur, safeLog) {
 			const hasPlain = !!j.plainLyrics
 				? j.plainLyrics.split('\n').length > MINIMUM_LINES : false;
 			// safeLog({hasSynced, hasPlain});
-			return hasSynced || hasPlain;
+			return options['synced-only'] ? hasSynced : hasSynced || hasPlain;
 		})
 	const scoredJson = filteredJson.map(j => {
 		const variance = Math.abs(j.duration - dur);
