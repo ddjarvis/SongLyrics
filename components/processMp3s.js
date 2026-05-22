@@ -9,6 +9,7 @@ import ora from 'ora';
 import chalk from 'chalk';
 import cliProgress from 'cli-progress';
 
+import {options, directories} from './globals.js';
 
 function createSafeLogger(progressBar) {
 	// This inner function "remembers" the progressBar via closure
@@ -196,6 +197,7 @@ async function readMp3s(mp3s) {
 		return limit(() => readMp3(mp3));
 	});
 	
+	const startTime = Date.now();
 	spinner.start();
 	dbFull = await Promise.all(promises);
 	dbFull = dbFull.sort((a,b) => a.path.value.localeCompare(b.path.value));
@@ -216,7 +218,14 @@ async function readMp3s(mp3s) {
 	let grpCounts = Object.entries(db.lrc).map(g => `${g[0]}: ${g[1]?.length || 0}`);
 	let counts = [`dbFull: ${dbFull.length}`, ...grpCounts].join(', ');
 	// console.log(inspect());
-	spinner.succeed(`Done! (${counts})`);
+	
+	// 2. Calculate elapsed time
+	const elapsedMs = Date.now() - startTime;
+	// 3. Format it (show 'ms' if under a second, otherwise 's')
+	const timeStr = elapsedMs < 1000 
+		? `${elapsedMs}ms` 
+		: `${(elapsedMs / 1000).toFixed(2)}s`;
+	spinner.succeed(`Done! (${counts}) [Elapsed: ${timeStr}]\n`);
 }
 
 async function processGroup(group) {
@@ -227,7 +236,7 @@ async function processGroup(group) {
 		barCompleteChar: '\u2588',
 		barIncompleteChar: '\u2591',
 		hideCursor: true,
-		clearOnComplete: false,
+		clearOnComplete: true,
 		stopOnComplete: true
 	});
 	
@@ -249,18 +258,27 @@ async function processGroup(group) {
 			}
 		});
 	});
-
+	
 	await Promise.all(promises);
+	console.log('');
 }
 
+async function printGroups(mp3s) {
+	await readMp3s(mp3s);
+	if(db.lrc.synced <= 80) printGroup(`Synced Lyrics`,db.lrc.synced);
+	printGroup(`Plain Lyrics`,db.lrc.unsynced);
+	printGroup(`No Lyrics`,db.lrc.none);
+}
 async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`;
 	let lrc = null;
 	try {
 		lrc = await getLyrics(mp3);
+		if(isMostlyCJK(lrc.value)) {
+			throw new Error('Lyrics is mostly Chinese/Japanese/Korean');
+		}
 	} catch (err) {
-		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track}`);
-		safeLog(`  Reason: ${err.message}\n`);
+		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track} (${chalk.italic(err.message)})`);
 		return
 	}
 	
@@ -272,24 +290,52 @@ async function processMp3(mp3, safeLog) {
 			text: lrc.value  // The plain or LRC formatted lyrics
 		}
 	};
-
+	
+	// --- DRY RUN CHECK ---
+	if (options['dry-run']) {
+		const log = {
+			track: `${track}`,
+			type: `${chalk.bold('Type:')} ${lrc.type}`,
+			variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
+			status: chalk.yellow.bold('⚠ Dry Run (Skipped Save):')
+		};
+		safeLog(`${log.status} ${log.track} (${log.type}, ${log.variance})`);
+		safeLog(lrc.value);
+		return; // Exit early, do not write to file
+	}
+	
 	try {
 		// 2. Write the tags to the file
 		// mp3.path contains the file path string based on your db.all mapping
 		await NodeID3.update(tagsToUpdate, mp3.path);
 
 		const log = {
-			track: `${chalk.bold('Track:')} ${track}`,
+			track: `${track}`,
 			type: `${chalk.bold('Type:')} ${lrc.type}`,
 			variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
 			status: chalk.green.bold('✓ Saved:')
 		};
-		safeLog(`${log.status}: ${log.track} (${log.type}, ${log.variance})`);
+		safeLog(`${log.status} ${log.track} (${log.type}, ${log.variance})`);
 		
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ Failed to save:')} ${track}`);
 		safeLog(`  Reason: ${err.message}\n`);
 	}
+}
+
+function isMostlyCJK(text) {
+	// 1. Remove spaces, numbers, punctuation, and symbols to only count actual letters
+	const cleanText = text.replace(/[\s\d\p{P}\p{S}]/gu, '');
+	
+	if (cleanText.length === 0) return false;
+
+	// 2. Match all CJK characters (using the 'g' global flag)
+	const cjkRegex = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+	const cjkMatches = cleanText.match(cjkRegex) || [];
+
+	// 3. Check if more than 50% of the letters are CJK (adjust threshold as needed)
+	const ratio = cjkMatches.length / cleanText.length;
+	return ratio > 0.1; 
 }
 
 function printGroup(name, group) {
@@ -311,15 +357,10 @@ export default async function(mp3s) {
 	// console.time('readMp3s_2');
 	await readMp3s(mp3s);
 	await processGroup(db.lrc.none);
-	
-	await readMp3s(mp3s);
 	// console.log(inspect(db.lrc, {
 	// 	depth: 1,
 	// 	maxArrayLength: 5,
 	// }));
 	// console.log(Array.isArray(db.lrc));
-	
-	printGroup(`Synced Lyrics`,db.lrc.synced);
-	printGroup(`Plain Lyrics`,db.lrc.unsynced);
-	printGroup(`No Lyrics`,db.lrc.none);
+	printGroups(mp3s);
 }

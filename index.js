@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 
-
+import chalk from 'chalk';
 import nodeid3lib from 'node-id3';
 const NodeID3 = nodeid3lib.Promise;
 
@@ -13,6 +13,21 @@ import showHelp from './components/showHelp.js';
 import processMp3s from './components/processMp3s.js';
 
 const config = {};
+
+// ==========================================
+// GRACEFUL SHUTDOWN HANDLER
+// ==========================================
+function handleExit(signal) {
+	// cleanupUI(); // Stop spinners, stop progress bars, show cursor
+	console.log(chalk.yellow(`\n⚠️  Process interrupted by user (${signal}). Exiting...`));
+	
+	// 130 is the standard exit code for a process terminated by Ctrl+C (SIGINT)
+	process.exit(130); 
+}
+
+process.on('SIGINT', () => handleExit('SIGINT'));   // Ctrl+C
+process.on('SIGTERM', () => handleExit('SIGTERM')); // kill command / Task Manager
+
 
 function displayHelp() {
 	showHelp();
@@ -29,8 +44,10 @@ config.recursive = inputs.opts.recursive;
 const dirs = getDirectories(inputs.dirs);
 const mp3list = getMp3List(dirs, config);
 
-// console.log(options);
-// console.log(directories);
+if(options['debug']) {
+	console.log(options);
+	console.log(directories);
+}
 
 // console.log(inputs);
 // console.log(dirs);

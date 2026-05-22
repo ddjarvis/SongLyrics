@@ -41,6 +41,11 @@ export const helpOptions = {
 		},
 		{
 			opt: 'd',
+			long: 'dry-run',
+			desc: 'Fetch and display lyrics without modifying MP3 files.',
+			hint: 'Default: false'
+		},
+		{
 			long: 'debug',
 			desc: 'Shows debug statements.',
 			hint: 'Default: false'

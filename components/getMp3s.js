@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import {options, directories} from './globals.js';
 
 
 function matchWildcard(str, pattern) {
@@ -28,11 +29,14 @@ function matchWildcard(str, pattern) {
  * Recursively finds all .mp3 files in a given directory (sync)
  */
 function findMp3sInDirSync(dirPath, opts) {
-	const { recursive, excludes } = {
+	const { recursive, exclude: excludes } = {
 		recursive: false,
-		excludes: [],
-		...opts
+		exclude: [],
+		...options
 	};
+	if(options['debug']) {
+		console.log({ recursive, excludes });
+	}
 	let results = [];
 	let push = false;
 	
@@ -48,6 +52,12 @@ function findMp3sInDirSync(dirPath, opts) {
 				else {
 					let hasExcludes = excludes.some(e => matchWildcard(fullPath,e));
 					push = !hasExcludes;
+					if(options['debug']) {
+						let pre = null;
+						if(hasExcludes) pre = 'Excluding';
+						if(!hasExcludes) pre = 'Not Excluding';
+						console.log(`${pre}: ${fullPath}`);
+					}
 					// console.log({excludes, hasExcludes, fullPath, push});
 					// console.log({res: results ? results.length : 0});
 				}

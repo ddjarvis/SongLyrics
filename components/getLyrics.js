@@ -17,18 +17,14 @@ export default async function (mp3, safeLog) {
 	// await sleep(300);
 	let rawJson = await throttledFetchLyrics(url);
 	if (rawJson == null) {
-		let preMsg = 'Empty JSON response for:';
-		let err = `${chalk.bold.redBright(preMsg)} ${chalk.redBright(track)}`;
+		let err = 'Empty JSON Response';
 		throw new Error(err);
-		return null;
 	}
 	
 	const parsedJson = parseJson(rawJson, mp3.durationSec);
 	if (parsedJson.length == 0) {
-		let preMsg = 'Empty Parsed JSON for:';
-		let err = `${chalk.bold.yellowBright(preMsg)} ${chalk.yellowBright(track)}`;
+		let err = 'Empty Parsed JSON';
 		throw new Error(err);
-		return null;
 	}
 	
 	const selectedJson = parsedJson[0];
