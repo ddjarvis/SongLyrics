@@ -1,15 +1,24 @@
-# SongLyrics 🎵
+# 🎵 SongLyrics
 
 **SongLyrics** is a powerful, feature-rich Node.js CLI tool designed to scan your local MP3 library, detect missing lyrics, and automatically fetch and embed them. It prioritizes synced (LRC) lyrics and uses an intelligent scoring algorithm to ensure the best match for your tracks.
 
+**New:** Features AI-powered transliteration for East Asian lyrics (Japanese, Chinese, Korean) and advanced path resolution with custom bookmarks!
+
 ## ✨ Features
 
-- **Smart Directory Scanning:** Recursively scan folders for MP3s with support for wildcard exclusions.
-- **Custom Path Bookmarks:** Define aliases for your most-used directories (e.g., `#{SL}`) to save typing.
-- **Brace Expansion:** Easily target multiple similar paths using brace syntax (e.g., `/music/{{Rock, Pop}}`).
-- **Intelligent Lyrics Matching:** Fetches from the `lrclib.net` API and scores results based on duration variance and synced lyric availability.
-- **Beautiful CLI UI:** Color-coded terminal output, spinners, and clean tables powered by `chalk`, `ora`, and `console-table-printer`.
-- **Concurrency:** Reads MP3 metadata concurrently using `p-limit` to speed up library scanning.
+- **Smart Lyrics Fetching & Scoring:** Queries LRCLIB and scores results based on duration variance and synced/unsynced status to find the most accurate lyrics.
+- **AI CJK Transliteration:** Automatically detects Chinese, Japanese, and Korean lyrics and uses **Mistral AI** to transliterate them into Latin-script phonetics (Hepburn Romaji, Hanyu Pinyin, Revised Romanization) while strictly preserving LRC timestamps.
+- **Advanced Path Resolution:** 
+  - **Bookmarks:** Use aliases like `#{SL}` to represent long directory paths.
+  - **Brace Expansion:** Scan multiple subdirectories easily using `#{SL}/{{Folder1, Folder2}}`.
+- **Flexible Scanning:** Recursive scanning, wildcard exclusions (e.g., ignore `*/.stversions/*`), and targeted rechecking.
+- **Beautiful CLI UI:** Non-blocking progress bars (`cli-progress`) and spinners (`ora`) with a safe-logger to prevent UI tearing during concurrent API requests.
+- **Safe Operations:** `--dry-run` mode to preview lyrics without modifying files, and graceful shutdown handling (`SIGINT`/`SIGTERM`).
+
+## 📋 Prerequisites
+
+- **Node.js** (v18+ recommended for native `fetch` and `node:util` `parseArgs`)
+- **Mistral API Key** (Optional, only required if you want CJK transliteration)
 
 ## 📦 Installation
 
@@ -29,13 +38,18 @@
    npm link
 ```
 
-## ⚙️ Configuration (Bookmarks)
+## ⚙️ Configuration
 
-SongLyrics supports custom path bookmarks so you don't have to type out long directory paths. 
+### 1. Environment Variables
+Create a `.env` file in the root directory to enable AI transliteration:
+```env
+MISTRAL_API_KEY=your_mistral_api_key_here
+```
 
-Create a `bookmarks.json` file in one of the following locations (checked in this order):
-1. `~/.config/songlyrics/bookmarks.json` (Recommended)
-2. `./bookmarks.json` (Current working directory)
+### 2. Directory Bookmarks
+You can define shortcuts for your music directories to avoid typing long paths. The app looks for `bookmarks.json` in:
+1. `~/.config/songlyrics/bookmarks.json`
+2. `./bookmarks.json` (Current Working Directory)
 
 **Example `bookmarks.json`:**
 ```json
@@ -46,65 +60,84 @@ Create a `bookmarks.json` file in one of the following locations (checked in thi
   "SL3": "/storage/emulated/0/Music/Song Library/#3 - Done"
 }
 ```
-*Note: The tool includes default bookmarks out-of-the-box, but your JSON file will override/merge with them.*
+*Usage:* `songlyrics "#{SL2}"`
+
 ## 🚀 Usage
 
 ```bash
-songlyrics [options] <directories...>
-# or
-lyrics [options] <directories...>
-```
+songlyrics [options] <directories...>```
 
 ### Options
 
-| Flag | Long Flag | Description |
-| :--- | :--- | :--- |
-| `-h` | `--help` | Display the help menu. |
-| `-r` | `--recursive` | Walk through subfolders recursively during the scan. |
-| `-e` | `--exclude <pattern>` | Exclude files or folders matching a specific wildcard pattern. (Repeatable) |
+| Flag | Long Flag | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `-h` | `--help` | Display the help menu. | `false` |
+| `-r` | `--recursive` | Walk through subfolders recursively. | `false` |
+| `-e` | `--exclude <string>` | Exclude files/folders matching a wildcard pattern. *(Repeatable)* | `*/.stversions/*` |
+| `-v` | `--variance <number>` | Maximum allowed duration variance in seconds. | `3` |
+| `-s` | `--synced-only` | Only accept synced (LRC) lyrics. | `false` |
+| `-c` | `--recheck` | Re-fetch lyrics for MP3s that already have plain (unsynced) lyrics. | `false` |
+| `-d` | `--dry-run` | Fetch and display lyrics without modifying the MP3 files. | `false` |
+| | `--debug` | Show verbose debug statements. | `false` |
 
 ### Examples
 
-**Basic scan of a specific folder:**
+**Basic Scan:**
 ```bash
-songlyrics /path/to/my/music
+songlyrics "/path/to/music"
 ```
 
-**Recursive scan using a bookmark:**
+**Recursive Scan with Exclusions:**
 ```bash
-songlyrics -r "#{SL2}"
+songlyrics -r -e "*/.stversions/*" -e "*/Podcasts/*" "/path/to/music"
 ```
 
-**Recursive scan with exclusions:**
+**Using Bookmarks & Brace Expansion:**
 ```bash
-songlyrics -r -e "*/.stversions/*" -e "*/temp/*" "#{SL}"
+# Scans both "#1 - Initial" and "#2 - Renamed" folders inside the "SL" bookmark
+songlyrics -r "#{SL}/{{#1 - Initial, #2 - Renamed}}"
 ```
 
-**Using Brace Expansion:**
+**Dry Run (Preview without saving):**
 ```bash
-# Expands to /music/Rock and /music/Pop
-songlyrics "/music/{{Rock, Pop}}" 
+songlyrics -d -r "#{SL2}"
 ```
 
 ## 🧠 How It Works
 
-1. **Parsing & Expansion:** Resolves CLI arguments, expands bookmarks (`#{...}`) and braces (`{{...}}`), and filters out non-directory paths.
-2. **Scanning:** Recursively finds `.mp3` files, respecting exclusion patterns.
-3. **Metadata Reading:** Reads ID3 tags and audio duration concurrently. It checks if unsynchronized or synchronized lyrics already exist.
-4. **Categorization:** Groups tracks into `Synced`, `Unsynced`, and `No Lyrics`.
-5. **Fetching:** For tracks missing lyrics, it queries the `lrclib.net` API.
-6. **Scoring Algorithm:** When multiple lyric results are returned, it scores them based on:
-   - **Duration Variance:** Penalizes tracks with a duration difference > 3 seconds.
-   - **Synced Bonus:** Heavily weights results that include LRC timestamps.
+1. **Scanning:** Resolves paths (expanding bookmarks and braces), filters out excluded patterns, and reads ID3 tags/audio metadata concurrently using `p-limit`.
+2. **Categorization:** Groups MP3s into `Synced`, `Unsynced`, and `None`. By default, it only processes the `None` group (unless `--recheck` is passed).
+3. **Fetching & Scoring:** Queries LRCLIB. Results are filtered by the `--variance` threshold and scored. Synced lyrics get a heavy weight bonus.
+4. **CJK Detection & Transliteration:** If the fetched lyrics contain >10% CJK characters, the text is sent to Mistral AI. The AI is strictly prompted to transliterate (Romaji/Pinyin/Romanization) without altering timestamps or English words.
+5. **Embedding:** Updates the `unsynchronisedLyrics` (USLT) ID3 frame with the final text.
 
-## 📋 TODO
+## 📝 TODOs
 
-- [x] **Implement ID3 Writing:** Implemented `NodeID3.update()` to write fetched plain/synced lyrics back to the MP3 file's `USLT` frame.
-- [x] **Optimize API Fetching:** Refactored `processGroup` in `processMp3s.js` to use `p-limit` for concurrent API requests.
-- [x] **Implement Progress Bar:** Fully integrated `cli-progress` to show a progress bar during the fetching/writing phase.
-- [ ] **Dry Run Mode:** Add a `--dry-run` flag to fetch and display lyrics without modifying the actual MP3 files.
-- [ ] **Error Handling for Writing:** Add robust file-backup mechanisms before overwriting existing ID3 tags.
-- [ ] **Configuration CLI:** Add a command to easily add/remove bookmarks directly from the CLI (e.g., `songlyrics config add SL /path/to/music`).
+### ✅ Completed
+- [x] Implement native Node.js `parseArgs` for CLI argument handling.- [x] Add `p-throttle` and `p-limit` to respect API rate limits and prevent memory spikes.
+- [x] Create a robust Lyrics Scoring algorithm (Duration variance + Synced weight).
+- [x] Implement custom Bookmark system (`#{}`) and Brace Expansion (`{{}}`) for paths.
+- [x] Add Safe Logger to prevent `cli-progress` and `ora` UI tearing during concurrent logs.
+- [x] Integrate Mistral AI for context-aware CJK transliteration (preserving LRC timestamps).
+- [x] Add Graceful Shutdown handlers (`SIGINT`, `SIGTERM`).
+- [x] Implement `--dry-run` and `--recheck` modes.
+
+### 🚧 Future / New TODOs
+- [ ] **LRC File Export:** Add an option to save lyrics as external `.lrc` files alongside the MP3s, in addition to (or instead of) ID3 embedding.
+- [ ] **Batching for Mistral:** Group multiple CJK lyric requests into a single Mistral API call to reduce latency and API overhead.
+- [ ] **Unit Tests:** Add Vitest/Jest tests for the path resolver (brace expansion/bookmarks) and the lyrics scoring algorithm.
+- [ ] **Fallback Providers:** Add support for fallback lyrics providers (e.g., Musixmatch, Genius) if LRCLIB returns empty.
+- [ ] **ID3 Version Handling:** Add explicit handling/flags for ID3v2.3 vs ID3v2.4 encoding edge cases in `node-id3`.
+- [ ] **Config File for Defaults:** Allow setting default CLI flags (like default exclusions or variance) via a `config.json` file.
+
+## 📦 Tech Stack
+
+- **Node.js** (Native `fetch`, `fs/promises`, `util.parseArgs`)
+- **music-metadata** & **node-id3** (Audio parsing and tag writing)
+- **@mistralai/mistralai** (AI Transliteration)
+- **cli-progress** & **ora** (Terminal UI)
+- **chalk** & **console-table-printer** (Styling and Help Menus)
+- **p-limit** & **p-throttle** (Concurrency and Rate Limiting)
 
 ## 📄 License
 
