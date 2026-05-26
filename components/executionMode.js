@@ -15,7 +15,7 @@ export function setExecutionMode(importMeta) {
     // ES Modules check
   	let url = importMeta.url;
   	let file = `file://${process.argv[1]}`;
-    console.log({url,file});
+    // console.log({url,file});
     isMain = importMeta.url === `file://${process.argv[1]}`;
   } else {
     // CommonJS fallback (checks if require is available)

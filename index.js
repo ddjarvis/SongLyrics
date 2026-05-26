@@ -20,7 +20,7 @@ export default async function (config = {}, dirs = []) {
 	// Merge passed config into the global options object
 	// so components that import `options` from globals.js can see them
 	Object.assign(options, config);
-	// directories.input = [...directories.input, ...dirs];
+	directories.input = [...directories.input, ...dirs];
 
 	const resolvedDirs = getDirectories(directories.input);
 	

@@ -6,7 +6,7 @@
   "exports": {
     ".": "./index.js"
   },
-  "bin": "./index.js",
+  "bin": "./bin/cli.js",
   "license": "MIT",
   "scripts": {
     "g": "node ./bin/cli.js",
