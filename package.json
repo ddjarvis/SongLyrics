@@ -1,18 +1,18 @@
 {
   "name": "songlyrics",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "bin": "./index.js",
   "license": "MIT",
   "scripts": {
-    "g": "node index.js",
-    "start": "printf '%s\n' 'Loading...' && node index.js",
+    "g": "node ./bin/cli.js",
+    "start": "printf '%s\n' 'Loading...' && node ./bin/cli.js",
     "cons": "bash consolidate.sh",
-    "lint-all": "eslint ./index.js ./components/**"
-  },
-  "devDependencies": {
-    "jest": "^30.4.1"
+    "lint-all": "eslint ./index.js ./bin/cli.js ./components/**"
   },
   "dependencies": {
     "@mistralai/mistralai": "^2.2.1",
@@ -28,5 +28,11 @@
     "p-limit": "^7.3.0",
     "p-throttle": "^8.1.0"
   },
-  "packageManager": "yarn@4.15.0"
+  "packageManager": "yarn@4.15.0",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^1.2.0",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0"
+  }
 }

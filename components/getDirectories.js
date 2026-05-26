@@ -149,12 +149,12 @@ function isDir(dirPath) {
 }
 
 export default function(args = []) {
-	if(args.length === 0) { throw new Error("no args"); }
+	if(args.length === 0) { throw new Error("No Args"); }
 	let dirs = getDirectories(args);
 	if(dirs.length > 0) {
 		directories.list = dirs;
 		return dirs;
 	} else {
-		throw new Error("no dirs");
+		throw new Error("No Directories");
 	}
 }
