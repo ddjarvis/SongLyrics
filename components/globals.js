@@ -1,3 +1,6 @@
+export const state = {
+  executionMode: null
+};
 export const options = {};
 export const directories = {};
 

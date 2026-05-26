@@ -18,7 +18,7 @@ export default defineConfig([
   		"no-unused-vars": "warn",
   		"no-console": "warn",
   		"prefer-template": "warn",
-  		"no-useless-assignment": "warn"
+  		"no-useless-assignment": "off"
   	}
   }
 ]);

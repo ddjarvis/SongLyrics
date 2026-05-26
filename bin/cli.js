@@ -5,6 +5,13 @@ import chalk from 'chalk';
 import { parseInput } from '../components/getInput.js';
 import showHelp from '../components/showHelp.js';
 import run from '../index.js'; // Import the core logic
+import { state } from '../components/globals.js';
+import { setExecutionMode } from '../components/executionMode.js';
+
+if(!state.executionMode) {
+	setExecutionMode(import.meta);
+	// console.log(state.executionMode); 
+}
 
 function handleExit(signal) {
 	console.log(chalk.yellow(`\n⚠️  Process interrupted by user (${signal}). Exiting...`));
