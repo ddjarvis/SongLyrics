@@ -14,11 +14,9 @@ function xtrim(input) {
 	switch (type) {
 		case 'number':
 			return input.toString();
-			break;
 		case 'string':
 			return input.replace(/ +/g,' ').trim();
-			break;
-		case 'object':
+		case 'object': {
 			let out
 			if (isArr) {
 				let arr = input;
@@ -34,7 +32,7 @@ function xtrim(input) {
 				out = Object.fromEntries(obj.filter(o => (o[1] != '') && (o[1] !== null)).map(o => [o[0], xtrim(o[1])]));
 			}
 			return out;
-			break;
+		}
 		default:
 			throw new Error("Invalid xtrim target.")
 	}
@@ -55,10 +53,10 @@ const colors = {
 }
 {
 	colors.fg.base = colors.base;
-	colors.fg.bright = colors.fg.base.map(c => c+'Bright');
+	colors.fg.bright = colors.fg.base.map(c => `${c}Bright`);
 	colors.fg.all = [...colors.fg.base, ...colors.fg.bright];
-	colors.bg.base = colors.base.map(c => 'bg'+c.charAt(0).toUpperCase()+c.substr(1).toLowerCase());
-	colors.bg.bright = colors.bg.base.map(c => c+'Bright');
+	colors.bg.base = colors.base.map(c => `bg${c.charAt(0).toUpperCase()}${c.substr(1).toLowerCase()}`);
+	colors.bg.bright = colors.bg.base.map(c => `${c}Bright`);
 	colors.bg.all = [...colors.bg.base, ...colors.bg.bright];
 
 	colors.fb = [];
@@ -150,14 +148,14 @@ function processHelpOptions(args = {}) {
 	let temp;
 	const out = {};
 	
-	if (!!name) {
+	if (name) {
 		out.name = theme.title(name);
 	}
-	if (!!desc) {
+	if (desc) {
 		out.desc = theme.description1(desc);
 	}
 	if (usage.length > 0) {
-		out.usage = usage.map(u => theme.description2('  ◦ ' +u));
+		out.usage = usage.map(u => theme.description2(`  ◦ ${ u}`));
 	}
 	if (commands.length > 0) {
 		out.commands = commands
@@ -183,14 +181,14 @@ function processHelpOptions(args = {}) {
 			.map(o => {
 				let regex = /(^\s*\(\s*)|(\s*\)\s*$)/g;
 				let flags = [
-					!!o.opt ? theme.flag('-'+o.opt) : '',
-					!!o.long ? theme.flag('--'+o.long) : '',
+					o.opt ? theme.flag(`-${o.opt}`) : '',
+					o.long ? theme.flag(`--${o.long}`) : '',
 				].filter(f => !!f).join(', ')
-				+(!!o.value ? theme.flag(` <${o.value}>`) : '');
-				let hint = !!o.hint ? o.hint.replace(regex,'') : '';
+				+(o.value ? theme.flag(` <${o.value}>`) : '');
+				let hint = o.hint ? o.hint.replace(regex,'') : '';
 				let desc = [
 					theme.description2(o.desc),
-					!!hint ? theme.hint(`(${hint})`) : ''
+					hint ? theme.hint(`(${hint})`) : ''
 				].filter(d => !!d).join(' ');
 				let obj = { flags, desc };
 				return obj;

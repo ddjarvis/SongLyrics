@@ -55,9 +55,7 @@ if(options['debug']) {
 // console.log(dirs);
 // console.log(mp3list.map((mp3,idx) => `${('0'.repeat(4)+idx).substr(-4)} ${mp3}`));
 
-
-
+// time for i in {1..9}; do printf "[%d/9] %s" "${i}" "Loading..."; printf "\r\e[0J[%d/9] %s\n" "${i}" "$(g -r -e "*/.stversions/*" "#{SL2}")"; done
 
 processMp3s(mp3list);
 
-// time for i in {1..9}; do printf "[%d/9] %s" "${i}" "Loading..."; printf "\r\e[0J[%d/9] %s\n" "${i}" "$(g -r -e "*/.stversions/*" "#{SL2}")"; done

@@ -61,8 +61,14 @@ function getShortPath() {
 function parseFile() {
 	local file="$1"
 	local short="$2"
-	local bt='```'
-	printf "File: %s\n${bt}\n%s\n${bt}\n" "${short}" "$(cat "${file}")"
+	local contents
+	local bt='````'
+	contents="$(cat "${file}" | perl -pe 's/^\s*(\/\/.+)*(\s+)$//g')"
+	printf "File: %s\n${bt}\n%s\n${bt}\n" "${short}" "${contents}"
+	
+	if (( ${options[quiet]} == 0 && ${options[show]} == 0 )); then {
+		printf "File: %s (%s lines)\n" "${short}" "$(wc -l <<< "${contents}")" >/dev/tty
+	} fi
 }
 
 function parseFiles() {
@@ -83,6 +89,8 @@ function join_by() { local d=""; [[ "$1" == "-d" ]] && { d="$2"; shift 2; }; loc
 function parseArgs() {
 	# Options/Arguments Parser (getopt)...
 	local show=0
+	local quiet=0
+	local copy=0
 	local filesArr=()
 	local files=""
 	
@@ -92,6 +100,8 @@ function parseArgs() {
 		while true; do {
 			case "$1" in
 				-s | --show ) show=1; shift ;;
+				-c | --copy ) copy=1; shift ;;
+				-q | --quiet ) quiet=1; shift ;;
 				-a | --add )
 					path="$(realpath "$2")"
 					[[ -e "${path}" ]] && filesArr+=("${path}")
@@ -105,6 +115,8 @@ function parseArgs() {
 	
 	declare -Ag options
 	options[show]="${show}"
+	options[copy]="${copy}"
+	options[quiet]="${quiet}"
 	options[files]="${files}"
 }
 
@@ -128,11 +140,21 @@ function main() {
 		files+=("${addfiles[@]}")
 	} fi
 	
-	if (( ${options[show]} > 0 )); then {
-		parseFiles "${files[@]}" | tee "${text_path}" | tee /dev/tty | termux-clipboard-set
-	} else {
-		parseFiles "${files[@]}" | tee "${text_path}" | termux-clipboard-set
-	} fi
+	parseFiles "${files[@]}" | tee "${text_path}" |\
+	{
+		if (( ${options[show]} > 0 )); then {
+			tee /dev/tty
+		} else {
+			cat
+		} fi
+	} |\
+	{
+		if (( ${options[copy]} > 0 )); then {
+			termux-clipboard-set
+		} else {
+			cat >/dev/null
+		} fi
+	}
 }
 
 main "$@"

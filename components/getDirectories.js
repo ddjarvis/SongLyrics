@@ -74,7 +74,8 @@ function checkArg(arg) {
 	const regBm = /(?<=(^|\/))\s*#{[^}]+}\s*(?=($|\/))/g;
 	const regBrace = /{{[^}]+,[^}]+}}/g; 
 	
-	let hasBrace = false, hasBm = false;
+	let hasBrace = false
+	let hasBm = false;
 	let allBm = [], allBraces = [];
 	const sep = path.sep;
 	const segments = arg.split(sep);
@@ -120,10 +121,10 @@ function parseBm(arg, bm) {
 	try {
 		const val = swapBookmark(bm);
 		if (!val) throw new Error("Not found in config");
-		return arg.replace('#{'+bm+'}', val);
+		return arg.replace(`#{${bm}}`, val);
 	}
 	catch(err) {
-		throw new Error(`Invalid BM: ${bm}`);
+		throw new Error(`Invalid BM: ${bm}`, {cause: err});
 	}
 }
 

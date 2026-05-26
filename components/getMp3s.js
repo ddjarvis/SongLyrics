@@ -17,7 +17,7 @@ function matchWildcard(str, pattern) {
 
 	// Replace '*' with '.*' to match any sequence of characters
 	// Note: We do this AFTER escaping other special chars so that '*' itself isn't escaped
-	const regexPattern = '^' + escapedPattern.replace(/\*/g, '.*') + '$';
+	const regexPattern = `^${  escapedPattern.replace(/\*/g, '.*')  }$`;
 
 	// Create a case-insensitive RegExp
 	const regex = new RegExp(regexPattern, 'i');

@@ -8,7 +8,8 @@
   "scripts": {
     "g": "node index.js",
     "start": "printf '%s\n' 'Loading...' && node index.js",
-    "cons": "bash consolidate.sh"
+    "cons": "bash consolidate.sh",
+    "lint-all": "eslint ./index.js ./components/**"
   },
   "devDependencies": {
     "jest": "^30.4.1"

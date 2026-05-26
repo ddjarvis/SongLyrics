@@ -11,6 +11,7 @@
 - **Advanced Path Resolution:** 
   - **Bookmarks:** Use aliases like `#{SL}` to represent long directory paths.
   - **Brace Expansion:** Scan multiple subdirectories easily using `#{SL}/{{Folder1, Folder2}}`.
+- **High-Performance Concurrency:** Utilizes `p-limit` and `p-throttle` to read metadata and fetch lyrics concurrently without hitting API rate limits or causing memory spikes.
 - **Flexible Scanning:** Recursive scanning, wildcard exclusions (e.g., ignore `*/.stversions/*`), and targeted rechecking.
 - **Beautiful CLI UI:** Non-blocking progress bars (`cli-progress`) and spinners (`ora`) with a safe-logger to prevent UI tearing during concurrent API requests.
 - **Safe Operations:** `--dry-run` mode to preview lyrics without modifying files, and graceful shutdown handling (`SIGINT`/`SIGTERM`).
@@ -19,6 +20,7 @@
 
 - **Node.js** (v18+ recommended for native `fetch` and `node:util` `parseArgs`)
 - **Mistral API Key** (Optional, only required if you want CJK transliteration)
+- **Yarn** (v4+ recommended, as configured in `package.json`)
 
 ## 📦 Installation
 
@@ -115,17 +117,20 @@ songlyrics -d -r "#{SL2}"
 
 ### ✅ Completed
 - [x] Implement native Node.js `parseArgs` for CLI argument handling.- [x] Add `p-throttle` and `p-limit` to respect API rate limits and prevent memory spikes.
+- [x] Add `p-throttle` and `p-limit` to respect API rate limits and prevent memory spikes.
 - [x] Create a robust Lyrics Scoring algorithm (Duration variance + Synced weight).
 - [x] Implement custom Bookmark system (`#{}`) and Brace Expansion (`{{}}`) for paths.
 - [x] Add Safe Logger to prevent `cli-progress` and `ora` UI tearing during concurrent logs.
 - [x] Integrate Mistral AI for context-aware CJK transliteration (preserving LRC timestamps).
 - [x] Add Graceful Shutdown handlers (`SIGINT`, `SIGTERM`).
 - [x] Implement `--dry-run` and `--recheck` modes.
+- [x] Build a rich, colorized help menu using `console-table-printer`.
+- [x] Configure ESLint and add a `lint-all` script for code quality enforcement.
 
 ### 🚧 Future / New TODOs
+- [ ] **Unit Testing:** Write comprehensive tests using `jest` (currently in `devDependencies`) for the path resolver (brace expansion/bookmarks) and the lyrics scoring algorithm.
 - [ ] **LRC File Export:** Add an option to save lyrics as external `.lrc` files alongside the MP3s, in addition to (or instead of) ID3 embedding.
 - [ ] **Batching for Mistral:** Group multiple CJK lyric requests into a single Mistral API call to reduce latency and API overhead.
-- [ ] **Unit Tests:** Add Vitest/Jest tests for the path resolver (brace expansion/bookmarks) and the lyrics scoring algorithm.
 - [ ] **Fallback Providers:** Add support for fallback lyrics providers (e.g., Musixmatch, Genius) if LRCLIB returns empty.
 - [ ] **ID3 Version Handling:** Add explicit handling/flags for ID3v2.3 vs ID3v2.4 encoding edge cases in `node-id3`.
 - [ ] **Config File for Defaults:** Allow setting default CLI flags (like default exclusions or variance) via a `config.json` file.

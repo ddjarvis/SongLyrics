@@ -21,7 +21,7 @@ export default async function (mp3, safeLog) {
 		rawJson = await throttledFetchLyrics(url);
 	} catch(error) {
 		safeLog(error);
-		throw new Error(error);
+		throw new Error("Error", {cause: error});
 	}
 	if (rawJson == null) {
 		let err = 'Empty JSON Response';
@@ -86,9 +86,9 @@ function parseJson(json, dur, safeLog) {
 	const filteredJson = json
 		.filter(j => Math.abs(j.duration - dur) <= VARIANCE_THRESHOLD)
 		.filter(j => {
-			const hasSynced = !!j.syncedLyrics
+			const hasSynced = j.syncedLyrics
 				? j.syncedLyrics.split('\n').length > MINIMUM_LINES : false;
-			const hasPlain = !!j.plainLyrics
+			const hasPlain = j.plainLyrics
 				? j.plainLyrics.split('\n').length > MINIMUM_LINES : false;
 			// safeLog({hasSynced, hasPlain});
 			return options['synced-only'] ? hasSynced : hasSynced || hasPlain;
