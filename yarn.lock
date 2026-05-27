@@ -967,7 +967,7 @@ __metadata:
     p-limit: "npm:^7.3.0"
     p-throttle: "npm:^8.1.0"
   bin:
-    songlyrics: ./index.js
+    songlyrics: ./bin/cli.js
   languageName: unknown
   linkType: soft
 

@@ -284,7 +284,8 @@ async function processGroup(group) {
 	// 	let msg = chalk.bold(`Success (Synced: ${results.synced.length}, Plain: ${results.plain.length})`);
 	// 	console.log(`${icon} ${msg}`);
 	// }
-	if(options['verbose'] || true) {
+	// if(options['verbose'] || true) 
+	{
 		let icon = chalk.bold.greenBright('✔');
 		if(results.synced.length > 0) {
 			let header = chalk.bold(`Synced (Count: ${results.synced.length}):`);

@@ -1,28 +1,8 @@
 #!/usr/bin/env node
 
-import 'dotenv'; // Load .env only when run as a CLI
+import '../components/loadEnv.js';
 
-import path from 'node:path';
-import os from 'node:os';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
-// 1. Define potential .env paths in order of priority
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ENV_PATHS = [
-	path.join(os.homedir(), '.config', 'songlyrics', '.env'), // 1. Global config (Recommended)
-	path.join(process.cwd(), '.env'),                         // 2. Current Working Directory
-	path.join(__dirname, '.env')                              // 3. Project root (Fallback)
-];
-
-// 2. Load the first .env file found
-for (const envPath of ENV_PATHS) {
-	if (fs.existsSync(envPath)) {
-		dotenv.config({ path: envPath });
-		// Optional: console.log(`Loaded env from: ${envPath}`);
-		break; 
-	}
-}
+// console.log(`${process.env['MISTRAL_API_KEY']}\n\n`);
 
 import chalk from 'chalk';
 
