@@ -251,15 +251,26 @@ async function processGroup(group) {
 	const safeLog = createSafeLogger(progressBar);
 
 	const limit = pLimit(5);
-
+	const results = {
+		synced: [],
+		plain: [],
+		error: []
+	}
 	const promises = group.map(mp3 => {
 		return limit(async () => {
 			try {
 				// PASS progressBar HERE
-				await processMp3(mp3, safeLog);
+				let result = await processMp3(mp3, safeLog);
+				if(!result) {
+					result = {
+						track:`${mp3.artist} - ${mp3.title}`,
+						type: 'error'
+					}
+				}
+				results[result.type].push(result.track);
 			} catch (error) {
 				// Also use progressBar.log for errors!
-				safeLog(`\n${chalk.red('Error processing:')} ${mp3.artist} - ${mp3.title}\n`);
+				safeLog(`\n${chalk.red('Error processing:')} ${mp3.artist} - ${mp3.title}\nName: ${error.name}\nMessage: ${error.message}\n`);
 			} finally {
 				progressBar.increment();
 			}
@@ -268,23 +279,56 @@ async function processGroup(group) {
 	
 	await Promise.all(promises);
 	console.log('');
+	// if(!options['verbose']) {
+	// 	let icon = chalk.bold.greenBright('✔');
+	// 	let msg = chalk.bold(`Success (Synced: ${results.synced.length}, Plain: ${results.plain.length})`);
+	// 	console.log(`${icon} ${msg}`);
+	// }
+	if(options['verbose'] || true) {
+		let icon = chalk.bold.greenBright('✔');
+		if(results.synced.length > 0) {
+			let header = chalk.bold(`Synced (Count: ${results.synced.length}):`);
+			let list = results['synced'].map(t => `  • ${t}`).join('\n');
+			console.log(`${icon} ${header}\n${list}\n`);
+		}
+		if(results.plain.length > 0) {
+			let header = chalk.bold(`Plain (Count: ${results.plain.length}):`);
+			let list = results['plain'].map(t => `  • ${t}`).join('\n');
+			console.log(`${icon} ${header}\n${list}\n`);
+		}
+	}
+	{
+		let icon = chalk.bold.redBright('✖');
+		let msg = chalk.bold(`Error (Count: ${results.error.length})`);
+		let list = results['error'].map(t => `  • ${t}`).join('\n');
+		console.log(`${icon} ${msg}\n${list}`);
+	}
+	if(options['dry-run']) {
+		let pre = chalk.yellow.bold(`⚠ [Dry Run Only]:`);
+		let msg = chalk.yellowBright('This is a dry run only. No actual changes were made.');
+		console.log(`\n${pre} ${msg}`);
+	}
+	console.log('');
 }
 
 async function processMp3(mp3, safeLog) {
 	let track = `${mp3.artist} - ${mp3.title}`;
 	let lrc = null;
+	let isCJK = null;
 	try {
 		let tmpLrc = await getLyrics(mp3, safeLog);
 		if (tmpLrc.value == null) throw new Error("Empty LRC");
-		if(isMostlyCJK(tmpLrc.value)) {
+		isCJK = isMostlyCJK(tmpLrc.value);
+		if(isCJK) {
 			let transLrc = await throttledMistral(tmpLrc.value);
 			if(transLrc == null) throw new Error("Failed to translate LRC");
-			lrc = {...tmpLrc, value: transLrc};
+			lrc = {...tmpLrc, value: transLrc, pre: tmpLrc.value};
 		} else {
 			lrc = tmpLrc;
 		}
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ No lyrics for:')} ${track} (${chalk.italic(err.message)})`);
+		// safeLog(`Name: ${err.name}\nMessage: ${err.message}\n`);
 		return
 	}
 	
@@ -303,11 +347,21 @@ async function processMp3(mp3, safeLog) {
 			track: `${track}`,
 			type: `${chalk.bold('Type:')} ${lrc.type}`,
 			variance: `${chalk.bold('Variance:')} ${lrc.variance}s`,
-			status: chalk.yellow.bold('⚠ Dry Run (Skipped Save):')
+			status: chalk.yellow.bold(`⚠ Dry Run (${lrc.type}):`)
 		};
 		safeLog(`${log.status} ${log.track} (${log.type}, ${log.variance})`);
-		safeLog(lrc.value);
-		return; // Exit early, do not write to file
+		if(options['verbose']) {
+			if(!isCJK) {
+				safeLog(lrc.value);
+			} else {
+				safeLog(`CJK Lyrics (Pre-Transliteration)\n${lrc.pre}\n`);
+				safeLog(`CJK Lyrics (Post-Transliteration)\n${lrc.value}\n`);
+			}
+		}
+		return {
+			track: log.track,
+			type: lrc.type.toLowerCase()
+		} // Exit early, do not write to file
 	}
 	
 	try {
@@ -322,10 +376,13 @@ async function processMp3(mp3, safeLog) {
 			status: chalk.green.bold('✓ Saved:')
 		};
 		safeLog(`${log.status} ${log.track} (${log.type}, ${log.variance})`);
-		
+		return {
+			track: log.track,
+			type: lrc.type.toLowerCase()
+		}
 	} catch (err) {
 		safeLog(`${chalk.redBright.bold('✗ Failed to save:')} ${track}`);
-		safeLog(`  Reason: ${err.message}\n`);
+		return { track, type: 'error' };
 	}
 }
 
@@ -381,5 +438,5 @@ export default async function(mp3s) {
 	// 	maxArrayLength: 5,
 	// }));
 	// console.log(Array.isArray(db.lrc));
-	printGroups(mp3s);
+	if(!options['dry-run']) printGroups(mp3s);
 }

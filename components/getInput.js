@@ -20,7 +20,9 @@ export function parseInput() {
 			help: { type: 'boolean', short: 'h', default: false },
 			recursive: { type: 'boolean', short: 'r', default: false },
 			recheck: { type: 'boolean', short: 'c', default: false },
-			variance: { type: 'string', short: 'v', default: '3' },
+			verbose: { type: 'boolean', short: 'v', default: false },
+			variance: { type: 'string', short: 't', default: '3' },
+			quiet: { type: 'boolean', short: 'q', default: false },
 			"synced-only": { type: 'boolean', short: 's', default: false },
 			"dry-run": { type: 'boolean', short: 'd', default: false }
 		},
@@ -31,7 +33,7 @@ export function parseInput() {
 	});
 	directories.input = positionals;
 	// console.log(options);
-	// console.log({positionals});
+	// console.log(positionals);
 	return {
 		opts: values,
 		dirs: positionals

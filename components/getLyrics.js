@@ -20,7 +20,7 @@ export default async function (mp3, safeLog) {
 	try {
 		rawJson = await throttledFetchLyrics(url);
 	} catch(error) {
-		safeLog(error);
+		// safeLog(error);
 		throw new Error("Error", {cause: error});
 	}
 	if (rawJson == null) {

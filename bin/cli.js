@@ -14,7 +14,7 @@ if(!state.executionMode) {
 }
 
 function handleExit(signal) {
-	console.log(chalk.yellow(`\n⚠️  Process interrupted by user (${signal}). Exiting...`));
+	console.log(chalk.redBright(`\n⚠️  Process interrupted by user (${signal}). Exiting...`));
 	process.exit(1); 
 }
 
@@ -23,7 +23,10 @@ process.on('SIGTERM', () => handleExit('SIGTERM'));
 
 async function main() {
 	const inputs = parseInput();
-
+	if (inputs.opts.debug) {
+		console.log(inputs.opts);
+		console.log(inputs);
+	}
 	if (inputs.opts.help) {
 		showHelp();
 		process.exit(0);
@@ -31,6 +34,7 @@ async function main() {
 
 	try {
 		// Pass the parsed CLI args to the core library function
+		// console.log(`Mistral Key: ${process.env["MISTRAL_API_KEY"]}`);
 		await run();
 	} catch (error) {
 		console.error(chalk.red(`\n❌ Fatal Error: ${error.message}`));
